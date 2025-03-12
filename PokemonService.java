@@ -1,79 +1,74 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class PokemonService {
-    private Map<String, Pokemon> pokemonMap = new HashMap<>();
+    private Map<String, Pokemon> pokemonMap;
+    private Map<String, Pokemon> userCollection;
 
-    // Método para cargar Pokémon desde un archivo CSV
-    public void loadPokemonsFromCSV(String filePath) {
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            br.readLine(); // Saltar la cabecera
+    public PokemonService(String mapType) {
+        this.pokemonMap = PokemonFactory.getMap(mapType);
+        this.userCollection = new TreeMap<>(); // Usamos TreeMap para mantener el orden por tipo1
+    }
 
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-
-                // Validar si hay suficientes datos
-                if (data.length < 10) {
-                    System.err.println("Fila inválida: " + line);
-                    continue;
-                }
-
-                try {
-                    // Crear el objeto Pokémon con validación de datos
-                    Pokemon pokemon = new Pokemon(
-                        data[0], // name
-                        Integer.parseInt(data[1]), // pokedexNumber
-                        data[2], // type1
-                        data[3].isEmpty() ? "Desconocido" : data[3], // type2 (manejar vacío)
-                        data[4], // classification
-                        Double.parseDouble(data[5]), // height
-                        Double.parseDouble(data[6]), // weight
-                        data[7], // abilities
-                        Integer.parseInt(data[8]), // generation
-                        Boolean.parseBoolean(data[9]) // legendaryStatus
-                    );
-
-                    pokemonMap.put(pokemon.getName(), pokemon);
-                } catch (NumberFormatException e) {
-                    System.err.println("Error al convertir datos: " + line);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Error al leer el archivo: " + e.getMessage());
+    public void addPokemon(Pokemon pokemon) {
+        if (pokemonMap.containsKey(pokemon.getName())) {
+            System.out.println("El Pokémon ya está en la colección.");
+        } else {
+            pokemonMap.put(pokemon.getName(), pokemon);
         }
     }
 
-    // Obtener un Pokémon por nombre
+    public void addUserPokemon(String name) {
+        Pokemon pokemon = pokemonMap.get(name);
+        if (pokemon == null) {
+            System.out.println("El Pokémon no se encuentra en los datos leídos.");
+        } else if (userCollection.containsKey(name)) {
+            System.out.println("El Pokémon ya está en la colección del usuario.");
+        } else {
+            userCollection.put(name, pokemon);
+            System.out.println("Pokémon agregado a la colección del usuario.");
+        }
+    }
+
     public Pokemon getPokemon(String name) {
         return pokemonMap.get(name);
     }
 
-    // Mostrar todos los Pokémon
     public void showAllPokemons() {
         for (Pokemon pokemon : pokemonMap.values()) {
             System.out.println(pokemon.getName() + " - " + pokemon.getType1());
         }
     }
 
-    // Mostrar Pokémon por tipo
-    public void showPokemonsByType(String type) {
-        for (Pokemon pokemon : pokemonMap.values()) {
-            if (pokemon.getType1().equalsIgnoreCase(type) || pokemon.getType2().equalsIgnoreCase(type)) {
-                System.out.println(pokemon.getName() + " - " + pokemon.getType1() + " / " + pokemon.getType2());
-            }
+    public void showUserPokemons() {
+        for (Pokemon pokemon : userCollection.values()) {
+            System.out.println(pokemon.getName() + " - " + pokemon.getType1());
         }
     }
 
-    // Mostrar Pokémon por habilidad
-    public void showPokemonsByAbility(String ability) {
-        for (Pokemon pokemon : pokemonMap.values()) {
-            if (pokemon.getAbilities().toLowerCase().contains(ability.toLowerCase())) {
-                System.out.println(pokemon.getName() + " - " + pokemon.getAbilities());
+    public void showPokemonsByType(String type) {
+        boolean found = false;
+        for (Pokemon pokemon : userCollection.values()) {
+            if (type.equalsIgnoreCase(pokemon.getType1())) {
+                System.out.println(pokemon.getName() + " - " + pokemon.getType1());
+                found = true;
             }
+        }
+        if (!found) {
+            System.out.println("No hay Pokémon disponibles con el tipo especificado.");
+        }
+    }
+
+    public void showPokemonsByAbility(String ability) {
+        boolean found = false;
+        for (Pokemon pokemon : pokemonMap.values()) {
+            if (pokemon.getAbilities().contains(ability)) {
+                System.out.println(pokemon.getName() + " - " + pokemon.getAbilities());
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No hay Pokémon disponibles con la habilidad especificada.");
         }
     }
 }
